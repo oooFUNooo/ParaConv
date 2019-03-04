@@ -1,17 +1,25 @@
 import os
 import sys
+import re
 import csv
+import argparse
 from janome.tokenizer import Tokenizer
 from janome.analyzer import Analyzer
 from janome.charfilter import *
 
 
-def convertVerbForm(dic, word, form):
-
-	return dic.get(word + ':' + form)
+verbdic = {}
 
 
-def analyze(path, file, out, log, dic):
+def convertVerbForm(word, form):
+
+	ret = verbdic.get(word + ':' + form)
+	if (ret == None and form == '連用形'):
+		ret = verbdic.get(word + ':' + '未然形')
+	return ret
+
+
+def analyze(path, file, out, log, args):
 
 	# Prepare to Analyze
 	char_filters = [RegexReplaceCharFilter('\[.*\]', ''),
@@ -22,7 +30,7 @@ def analyze(path, file, out, log, dic):
 
 	analyzer = Analyzer(char_filters, tokenizer)
 
-	text = open(path + '/' + file, 'r', encoding = 'UTF-8')
+	text = open(path + '/' + file, 'r', encoding = 'utf_8_sig')
 
 	# Analyze
 	for line in text:
@@ -39,13 +47,18 @@ def analyze(path, file, out, log, dic):
 			out.write(line + '\n')
 			continue
 
+		# For Debug Purpose
+		if args.line:
+			print(line)
+
 		# Split into Sentences
 		maintext = line.split('"')[1].split('"')[0]
-		sentences = maintext.split('。')
+		sentences = re.split('[。？！…]', maintext)
 
 		# Break into Tokens
 		for sentence in sentences:
 			tokens = analyzer.analyze(sentence)
+			srcsentence = sentence
 
 			# Initialize
 			word       = ''
@@ -82,15 +95,19 @@ def analyze(path, file, out, log, dic):
 				form = token.infl_form
 				part = token.part_of_speech.split(',')[0]
 
-				# Rule 12
-				if ((base == 'だ' or base == 'だが') and part == '接続詞'):
-					convsrc = word
-					convdst = 'ですが'
+				# For Debug Purpose
+				if args.token:
+					print(word, base, form, part)
 
-				# Replace words
+				# Rule 12
+				if ((prebase == 'だ' or prebase == 'だが') and prepart == '接続詞'):
+					convsrc = preword + word
+					convdst = 'ですが' + word
+
+				# Replace Words
 				if not convsrc == '':
 					logflag = True
-					line = line.replace(convsrc, convdst, 1)
+					sentence = sentence.replace(convsrc, convdst, 1)
 					convsrc == ''
 
 			else:
@@ -98,22 +115,22 @@ def analyze(path, file, out, log, dic):
 				# Rule 1
 				if (part == '動詞' and form == '基本形'):
 					convsrc = word
-					convdst = dic.get(base + ':' + '連用形') + 'ます'
+					convdst = convertVerbForm(base, '連用形') + 'ます'
 
 				# Rule 2
 				elif (prepart == '動詞' and (preform == '連用形' or preform == '連用タ接続') and base == 'た' and part == '助動詞' and form == '基本形'):
 					convsrc = preword + word
-					convdst = dic.get(prebase + ':' + '連用形') + 'ました'
+					convdst = convertVerbForm(prebase, '連用形') + 'ました'
 
 				# Rule 3
 				elif (prepart == '動詞' and preform == '未然形' and base == 'ない' and part == '助動詞' and form == '基本形'):
 					convsrc = preword + word
-					convdst = dic.get(prebase + ':' + '未然形') + 'ません'
+					convdst = convertVerbForm(prebase, '連用形') + 'ません'
 
 				# Rule 4
 				elif (preprepart == '動詞' and prepreform == '未然形' and prebase == 'ない' and prepart == '助動詞' and preform == '連用タ接続' and base == 'た' and part == '助動詞' and form == '基本形'):
 					convsrc = prepreword + preword + word
-					convdst = dic.get(preprebase + ':' + '未然形') + 'ませんでした'
+					convdst = convertVerbForm(preprebase, '連用形') + 'ませんでした'
 
 				# Rule 5
 				elif (base == 'だ' and part == '助動詞' and form == '基本形'):
@@ -160,10 +177,15 @@ def analyze(path, file, out, log, dic):
 					convsrc = preword + word
 					convdst = 'ありませんでした'
 
-				# Replace words
+				# Replace Words Backward
 				if not convsrc == '':
 					logflag = True
-					line = line.replace(convsrc, convdst, 1)
+					sentence = sentence[::-1]
+					convsrc  = convsrc[::-1]
+					convdst  = convdst[::-1]
+					sentence = sentence.replace(convsrc, convdst, 1)
+					sentence = sentence[::-1]
+					line = line.replace(srcsentence, sentence, 1)
 
 		# Output
 		out.write(line + '\n')
@@ -179,12 +201,16 @@ def analyze(path, file, out, log, dic):
 def main():
 
 	# Process Command Line Options
-	target = sys.argv[1] # Target Folder
-	output = sys.argv[2] # Output Folder
-	result = sys.argv[3] # Result Folder
+	parser = argparse.ArgumentParser()
+	parser.add_argument('input'  , help = 'input folder')
+	parser.add_argument('output' , help = 'output folder')
+	parser.add_argument('log'    , help = 'log folder')
+	parser.add_argument('--line' , help = 'show processing lines' , action = 'store_true')
+	parser.add_argument('--token', help = 'show processing tokens', action = 'store_true')
+	args = parser.parse_args()
 
 	# Create Verb Dictionary
-	verbdic = {}
+	print('Creating dictionary...')
 	dic = open('Verb.csv', 'r', encoding = 'EUC-JP')
 	dataReader = csv.reader(dic)
 	for row in dataReader:
@@ -192,17 +218,18 @@ def main():
 	dic.close()
 
 	# Create Folders
-	if not os.path.isdir(output):
-		os.mkdir(output)
-	if not os.path.isdir(result):
-		os.mkdir(result)
+	if not os.path.isdir(args.output):
+		os.mkdir(args.output)
+	if not os.path.isdir(args.log):
+		os.mkdir(args.log)
 
 	# Analyze Target Files
-	files = os.listdir(target)
+	files = os.listdir(args.input)
 	for file in files:
-		out = open(output + '/' + file, 'w', encoding = 'UTF-8')
-		log = open(result + '/' + file, 'w', encoding = 'UTF-8')
-		analyze(target, file, out, log, verbdic)
+		print('Processing ' + file + '...')
+		out = open(args.output + '/' + file, 'w', encoding = 'utf_8_sig')
+		log = open(args.log    + '/' + file, 'w', encoding = 'utf_8_sig')
+		analyze(args.input, file, out, log, args)
 		out.close()
 		log.close()
 
