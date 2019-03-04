@@ -29,6 +29,12 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
      `$ ParaConv.py utf8/localisation out log`
 
+## 今後の予定
+
+ - 敬体（です・ます調）から常体（だ・である調）への変換に対応する。
+ - イベントに関連するエントリだけを変換対象にする。
+ - 行頭の「我々は」「彼らは」などを一括して省略する。
+
 ## 参考資料
 
  - mocobeta『[janome - Japanese morphological analysis engine written in pure Python](https://github.com/mocobeta/janome)』
