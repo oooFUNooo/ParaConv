@@ -11,6 +11,8 @@ from janome.charfilter import *
 
 verbdic = {}
 
+mashita_exceptions = ['する', 'せる', 'いる', 'くる']
+
 
 def convertVerbForm(word, form):
 
@@ -82,7 +84,7 @@ def applyJoutaiToKeitaiRule(line, analyzer, args):
 			# Replace Words
 			if not convsrc == '':
 				sentence = sentence.replace(convsrc, convdst, 1)
-				convsrc == ''
+				convsrc = ''
 
 		else:
 
@@ -172,7 +174,6 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 	# Break into Tokens
 	for sentence in sentences:
 		tokens = analyzer.analyze(sentence)
-		srcsentence = sentence
 
 		# Initialize
 		word       = ''
@@ -219,35 +220,10 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 				form = token.infl_form
 				part = token.part_of_speech.split(',')[0]
 
-			# Rule 12
-			if (prebase == 'ですが' and prepart == '接続詞'):
-				convsrc = preword + word
-				convdst = 'だが' + word
-
-			# Replace Words
-			if not convsrc == '':
-				sentence = sentence.replace(convsrc, convdst, 1)
-				convsrc == ''
-
-		else:
-
-			## Rule 1
-			if (prepart == '動詞' and preform == '連用形' and word == 'ます' and part == '助動詞'):
-				convsrc = preword + word
-				convdst = convertVerbForm(prebase, '基本形')
-
-			#? Rule 2
-			elif (prepart == '動詞' and preform == '連用形' and word == 'ました' and part == '助動詞'):
-				convsrc = preword + word
-				if prebase == 'する':
-					convdst = convertVerbForm(prebase, '連用形') + 'た'
-				else:
-					convdst = convertVerbForm(prebase, '連用タ接続') + 'た'
-
 			# Rule 7/13
-			elif (prebase == 'ある' and (prepart == '動詞' or prepart == '形容詞') and preform == '連用形' and word == 'ません' and part == '助動詞'):
-				convsrc = preword + word
-				convdst = 'ない'
+			if (preprebase == 'ある' and (preprepart == '動詞' or preprepart == '形容詞') and prepreform == '連用形' and preword == 'ません' and prepart == '助動詞' and part != '助動詞'):
+				convsrc = prepreword + preword + word
+				convdst = 'ない' + word
 
 			# Rule 14
 			elif (prebase == 'ある' and (prepart == '動詞' or prepart == '形容詞') and preform == '連用形' and word == 'ませんでした' and part == '助動詞'):
@@ -255,14 +231,32 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 				convdst = 'なかった'
 
 			# Rule 3
-			elif (prepart == '動詞' and preform == '連用形' and 'ません' in word and part == '助動詞'):
-				convsrc = preword + word.replace('ません', '') + 'ません'
-				convdst = convertVerbForm(prebase, '未然形') + word.replace('ません', '') + 'ない'
+			elif (preprepart == '動詞' and prepreform == '連用形' and 'ません' in preword and prepart == '助動詞' and part != '助動詞'):
+				convsrc = prepreword + preword.replace('ません', '') + 'ません' + word
+				convdst = convertVerbForm(preprebase, '未然形') + preword.replace('ません', '') + 'ない' + word
 
 			# Rule 4
 			elif (prepart == '動詞' and preform == '連用形' and 'ませんでした' in word and part == '助動詞'):
 				convsrc = preword + word.replace('ませんでした', '') + 'ませんでした'
 				convdst = convertVerbForm(prebase, '未然形') + word.replace('ませんでした', '') + 'なかった'
+
+			# Rule 1
+			elif (prepart == '動詞' and preform == '連用形' and word == 'ます' and part == '助動詞'):
+				convsrc = preword + word
+				convdst = convertVerbForm(prebase, '基本形')
+
+			# Rule 2
+			elif (prepart == '動詞' and preform == '連用形' and word == 'ました' and part == '助動詞'):
+				convsrc = preword + word
+				if prebase in mashita_exceptions:
+					verb = convertVerbForm(prebase, '連用形')
+				else:
+					verb = convertVerbForm(prebase, '連用タ接続')
+				if verb[-1:] == 'ん':
+					tada = 'だ'
+				else:
+					tada = 'た'
+				convdst = verb + tada
 
 			# Rule 5/8
 			elif ('です' in word and part == '助動詞'):
@@ -294,14 +288,32 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 				else:
 					convdst = random.choice(['だろう', 'であろう'])
 
-			# Replace Words Backward
+			# Rule 12
+			elif (prebase == 'ですが' and prepart == '接続詞'):
+				convsrc = preword + word
+				convdst = 'だが' + word
+
+			# Replace Words
 			if not convsrc == '':
-				sentence = sentence[::-1]
-				convsrc  = convsrc[::-1]
-				convdst  = convdst[::-1]
-				sentence = sentence.replace(convsrc, convdst, 1)
-				sentence = sentence[::-1]
-				line = line.replace(srcsentence, sentence, 1)
+				line = line.replace(convsrc, convdst, 1)
+				convsrc = ''
+
+		else:
+
+			# Rule 7/13
+			if (prebase == 'ある' and (prepart == '動詞' or prepart == '形容詞') and preform == '連用形' and word == 'ません' and part == '助動詞'):
+				convsrc = preword + word
+				convdst = 'ない'
+
+			# Rule 3
+			elif (prepart == '動詞' and preform == '連用形' and 'ません' in word and part == '助動詞'):
+				convsrc = preword + word.replace('ません', '') + 'ません'
+				convdst = convertVerbForm(prebase, '未然形') + word.replace('ません', '') + 'ない'
+
+			# Replace Words
+			if not convsrc == '':
+				line = line.replace(convsrc, convdst, 1)
+				convsrc = ''
 
 	return line
 
