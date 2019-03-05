@@ -28,6 +28,10 @@ def convertVerbForm(word, form):
 
 def applyJoutaiToKeitaiRule(line, analyzer, args):
 
+	# No Main Text
+	if line.find('"') == -1:
+		return line
+
 	# Split into Sentences
 	maintext = line.split('"')[1].split('"')[0]
 	sentences = re.split('[。？！…]', maintext)
@@ -74,7 +78,7 @@ def applyJoutaiToKeitaiRule(line, analyzer, args):
 
 			# For Debug Purpose
 			if args.token:
-				print(word, base, form, part)
+				print(word, base, part, form)
 
 			# Rule 12
 			if ((prebase == 'だ' or prebase == 'だが') and prepart == '接続詞'):
@@ -167,7 +171,12 @@ def applyJoutaiToKeitaiRule(line, analyzer, args):
 
 def applyKeitaiToJoutaiRule(line, analyzer, args):
 
+	# No Main Text
+	if line.find('"') == -1:
+		return line
+
 	# Split into Sentences
+	srcline = line
 	maintext = line.split('"')[1].split('"')[0]
 	sentences = re.split('[。？！…]', maintext)
 
@@ -196,7 +205,7 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 
 			# For Debug Purpose
 			if args.token:
-				print(token.surface, token.base_form, token.infl_form, token.part_of_speech.split(',')[0])
+				print(token.surface, token.base_form, token.part_of_speech.split(',')[0], token.infl_form)
 
 			# Join Tokens
 			if (part == '助動詞' and token.part_of_speech.split(',')[0] == '助動詞'):
@@ -300,6 +309,14 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 
 		else:
 
+			# Check the end of a sentence to force 'dearu'
+			if (args.dearu):
+				pos = srcline.find(sentence)
+				if (pos + len(sentence) < len(srcline) and (srcline[pos + len(sentence)] == '！' or srcline[pos + len(sentence)] == '…')):
+					dearuflag = False
+				else:
+					dearuflag = True
+
 			# Rule 7/13
 			if (prebase == 'ある' and (prepart == '動詞' or prepart == '形容詞') and preform == '連用形' and word == 'ません' and part == '助動詞'):
 				convsrc = preword + word
@@ -309,6 +326,30 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 			elif (prepart == '動詞' and preform == '連用形' and 'ません' in word and part == '助動詞'):
 				convsrc = preword + word.replace('ません', '') + 'ません'
 				convdst = convertVerbForm(prebase, '未然形') + word.replace('ません', '') + 'ない'
+
+			# Rule 5/8 Forced
+			elif (args.da and word[-3:] == 'である' and part == '助動詞'):
+				convsrc = word
+				convdst = word[:-3] + 'だ'
+			elif (args.dearu and word[-1:] == 'だ' and part == '助動詞' and dearuflag):
+				convsrc = word
+				convdst = word[:-1] + 'である'
+
+			# Rule 6/9 Forced
+			elif (args.da and word[-4:] == 'であった' and part == '助動詞'):
+				convsrc = word
+				convdst = word[:-4] + 'だった'
+			elif (args.dearu and word[-3:] == 'だった' and part == '助動詞'):
+				convsrc = word
+				convdst = word[:-3] + 'であった'
+
+			# Rule 10/11 Forced
+			elif (args.da and word[-4:] == 'であろう' and part == '助動詞'):
+				convsrc = word
+				convdst = word[:-4] + 'だろう'
+			elif (args.dearu and word[-3:] == 'だろう' and part == '助動詞'):
+				convsrc = word
+				convdst = word[:-3] + 'であろう'
 
 			# Replace Words
 			if not convsrc == '':
@@ -366,18 +407,22 @@ def analyze(path, file, out, log, args):
 
 def main():
 
-	# Process Command Line Options
+	# Parse Command Line Options
 	parser = argparse.ArgumentParser()
 	parser.add_argument('input'    , help = 'input folder')
 	parser.add_argument('output'   , help = 'output folder')
 	parser.add_argument('log'      , help = 'log folder')
-	parser.add_argument('--keitai' , help = 'convert into keitai (desu, masu)'   , action = 'store_true')
-	parser.add_argument('--joutai' , help = 'convert into joutai (da, dearu)'    , action = 'store_true')
-	parser.add_argument('--da'     , help = 'force to use da (with --joutai)'    , action = 'store_true')
-	parser.add_argument('--dearu'  , help = 'force to use dearu (with --joutai)' , action = 'store_true')
+	parser.add_argument('--keitai' , help = 'convert into keitai (desu, masu)', action = 'store_true')
+	parser.add_argument('--joutai' , help = 'convert into joutai (da, dearu)' , action = 'store_true')
+	parser.add_argument('--da'     , help = 'convert into joutai (da only)'   , action = 'store_true')
+	parser.add_argument('--dearu'  , help = 'convert into joutai (dearu only)', action = 'store_true')
+	parser.add_argument('--file'   , help = 'regard input as a file' , action = 'store_true')
 	parser.add_argument('--line'   , help = 'show processing lines' , action = 'store_true')
 	parser.add_argument('--token'  , help = 'show processing tokens', action = 'store_true')
+
 	args = parser.parse_args()
+	if (args.da or args.dearu):
+		args.joutai = True
 
 	# Create Verb Dictionary
 	print('Creating dictionary...')
@@ -394,7 +439,12 @@ def main():
 		os.mkdir(args.log)
 
 	# Analyze Target Files
-	files = os.listdir(args.input)
+	if (args.file):
+		filepath = os.path.split(args.input)
+		files = [filepath[1]]
+		args.input = filepath[0]
+	else:
+		files = os.listdir(args.input)
 	for file in files:
 		print('Processing ' + file + '...')
 		out = open(args.output + '/' + file, 'w', encoding = 'utf_8_sig')
