@@ -9,7 +9,7 @@ from janome.charfilter import *
 
 
 verbdic = {}
-
+keylist = []
 mashita_exceptions = ['する', 'せる', 'いる', 'くる']
 
 
@@ -27,12 +27,12 @@ def convertVerbForm(word, form):
 
 def applyJoutaiToKeitaiRule(line, analyzer, args):
 
-	# No Main Text
-	if line.find('"') == -1:
-		return line
-
 	# Split into Sentences
-	maintext = line.split('"')[1].split('"')[0]
+	if (args.eu4 or args.hoi4 or args.stellaris):
+		maintext = line.split('"')[1].split('"')[0]
+	elif (args.ck2):
+		maintext = line.split(';')[1].split(';')[0]
+
 	sentences = re.split('[。？！…]', maintext)
 
 	# Break into Tokens
@@ -170,14 +170,14 @@ def applyJoutaiToKeitaiRule(line, analyzer, args):
 
 def applyKeitaiToJoutaiRule(line, analyzer, args):
 
-	# No Main Text
-	if line.find('"') == -1:
-		return line
-
 	# Split into Sentences
-	srcline = line
-	maintext = line.split('"')[1].split('"')[0]
+	if (args.eu4 or args.hoi4 or args.stellaris):
+		maintext = line.split('"')[1].split('"')[0]
+	elif (args.ck2):
+		maintext = line.split(';')[1].split(';')[0]
+
 	sentences = re.split('[。？！…]', maintext)
+	srcline = line
 
 	# Break into Tokens
 	for sentence in sentences:
@@ -389,10 +389,25 @@ def analyze(path, file, out, log, args):
 		line = line.rstrip('\n')
 		srcline = line
 
-		# Skip Header
-		if (line == 'l_english:'):
-			out.write(line + '\n')
-			continue
+		# Skip No Main Text
+		if (args.eu4 or args.hoi4 or args.stellaris):
+			if line.find('"') == -1:
+				out.write(line + '\n')
+				continue
+		elif (args.ck2):
+			if line[0] == '#':
+				out.write(line + '\n')
+				continue
+
+		# Check Key
+		if args.key:
+			if (args.eu4 or args.hoi4 or args.stellaris):
+				key = re.search("^\s*([^\s:]+):", line).group(1)
+			elif (args.ck2):
+				key = re.search("^([^;]+);", line).group(1)
+			if not key in keylist:
+				out.write(line + '\n')
+				continue
 
 		# For Debug Purpose
 		if args.line:
@@ -419,20 +434,33 @@ def main():
 
 	# Parse Command Line Options
 	parser = argparse.ArgumentParser()
-	parser.add_argument('input'    , help = 'input folder')
-	parser.add_argument('output'   , help = 'output folder')
-	parser.add_argument('log'      , help = 'log folder')
-	parser.add_argument('--keitai' , help = 'convert into keitai (desu, masu)', action = 'store_true')
-	parser.add_argument('--joutai' , help = 'convert into joutai (da, dearu)' , action = 'store_true')
-	parser.add_argument('--da'     , help = 'convert into joutai (da only)'   , action = 'store_true')
-	parser.add_argument('--dearu'  , help = 'convert into joutai (dearu only)', action = 'store_true')
-	parser.add_argument('--file'   , help = 'regard input as a file' , action = 'store_true')
-	parser.add_argument('--line'   , help = 'show processing lines' , action = 'store_true')
-	parser.add_argument('--token'  , help = 'show processing tokens', action = 'store_true')
+	parser.add_argument('input'      , help = 'input folder')
+	parser.add_argument('output'     , help = 'output folder')
+	parser.add_argument('log'        , help = 'log folder')
+	parser.add_argument('--keitai'   , help = 'convert into keitai (desu, masu)', action = 'store_true')
+	parser.add_argument('--joutai'   , help = 'convert into joutai (da, dearu)' , action = 'store_true')
+	parser.add_argument('--da'       , help = 'convert into joutai (da only)'   , action = 'store_true')
+	parser.add_argument('--dearu'    , help = 'convert into joutai (dearu only)', action = 'store_true')
+	parser.add_argument('--key'      , help = 'supply a key file'               , type = str)
+	parser.add_argument('--file'     , help = 'regard input as a file'          , action = 'store_true')
+	parser.add_argument('--eu4'      , help = 'set for Europa Universalis IV'   , action = 'store_true')
+	parser.add_argument('--ck2'      , help = 'set for Crusader Kings II'       , action = 'store_true')
+	parser.add_argument('--hoi4'     , help = 'set for Hearts of Iron IV'       , action = 'store_true')
+	parser.add_argument('--stellaris', help = 'set for Stellaris'               , action = 'store_true')
+	parser.add_argument('--line'     , help = 'show processing lines'           , action = 'store_true')
+	parser.add_argument('--token'    , help = 'show processing tokens'          , action = 'store_true')
 
 	args = parser.parse_args()
 	if (args.da or args.dearu):
 		args.joutai = True
+
+	# Create Key List
+	if args.key:
+		keys = open(args.key, 'r', encoding = 'utf_8_sig')
+		for key in keys:
+			key = key.rstrip('\n')
+			keylist.append(key)
+		keys.close()
 
 	# Create Verb Dictionary
 	print('Creating dictionary...')
@@ -457,11 +485,15 @@ def main():
 		files = os.listdir(args.input)
 	for file in files:
 		print('Processing ' + file + '...')
-		out = open(args.output + '/' + file, 'w', encoding = 'utf_8_sig')
-		log = open(args.log    + '/' + file, 'w', encoding = 'utf_8_sig')
+		outfilename = args.output + '/' + file
+		logfilename = args.log    + '/' + file + '.diff'
+		out = open(outfilename, 'w', encoding = 'utf_8_sig')
+		log = open(logfilename, 'w', encoding = 'utf_8_sig')
 		analyze(args.input, file, out, log, args)
 		out.close()
 		log.close()
+		if os.path.getsize(logfilename) == 0:
+			os.remove(logfilename)
 
 
 if __name__ == "__main__":

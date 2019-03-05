@@ -3,9 +3,9 @@ import re
 import argparse
 
 
-def analyze(path, file, out, args):
+def analyze(path, file, out, encord, args):
 
-	text = open(path + '/' + file, 'r', encoding = 'ISO-8859-2')
+	text = open(path + '/' + file, 'r', encoding = encord)
 
 	# Analyze
 	for line in text:
@@ -17,7 +17,7 @@ def analyze(path, file, out, args):
 		if args.line:
 			print(line)
 
-		# Apply Rules
+		# Extract Key
 		result = re.search("desc\s*=\s*\"?([^\s\"{]+)\"?$", line)
 
 		# Output
@@ -33,23 +33,23 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('input'      , help = 'input folder')
 	parser.add_argument('output'     , help = 'output file')
-	parser.add_argument('--eu4'      , help = 'for Europa Universalis IV', action = 'store_true')
-	parser.add_argument('--ck2'      , help = 'for Crusader Kings II'    , action = 'store_true')
-	parser.add_argument('--hoi4'     , help = 'for Hearts of Iron IV'    , action = 'store_true')
-	parser.add_argument('--stellaris', help = 'for Stellaris'            , action = 'store_true')
-	parser.add_argument('--file'     , help = 'regard input as a file'   , action = 'store_true')
-	parser.add_argument('--line'     , help = 'show processing lines'    , action = 'store_true')
+	parser.add_argument('--eu4'      , help = 'set for Europa Universalis IV', action = 'store_true')
+	parser.add_argument('--ck2'      , help = 'set for Crusader Kings II'    , action = 'store_true')
+	parser.add_argument('--hoi4'     , help = 'set for Hearts of Iron IV'    , action = 'store_true')
+	parser.add_argument('--stellaris', help = 'set for Stellaris'            , action = 'store_true')
+	parser.add_argument('--file'     , help = 'regard input as a file'       , action = 'store_true')
+	parser.add_argument('--line'     , help = 'show processing lines'        , action = 'store_true')
 	args = parser.parse_args()
 
 	# Set Encording for Each Title
 	if args.eu4:
-		encording = 'ISO-8859-2'
+		encord = 'ISO-8859-2'
 	elif args.ck2:
-		encording = 'utf_8'
+		encord = 'utf_8'
 	elif args.hoi4:
-		encording = 'utf_8_sig'
+		encord = 'utf_8_sig'
 	elif args.stellaris:
-		encording = 'utf_8'
+		encord = 'utf_8'
 
 	# Analyze Target Files
 	if (args.file):
@@ -61,7 +61,7 @@ def main():
 	out = open(args.output, 'w', encoding = 'utf_8_sig')
 	for file in files:
 		print('Processing ' + file + '...')
-		analyze(args.input, file, out, args)
+		analyze(args.input, file, out, encord, args)
 	out.close()
 
 
