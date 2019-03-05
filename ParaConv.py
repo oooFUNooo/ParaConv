@@ -378,8 +378,7 @@ def applyNoPronounRule(line, analyzer, args):
 	elif args.ck2:
 		maintext = line.split(';')[1].split(';')[0]
 
-	sentences = re.split('[、。？！…]', maintext)
-	srcline = line
+	sentences = re.split('[。？！…]', maintext)
 
 	# Break into Tokens
 	for sentence in sentences:
@@ -402,7 +401,6 @@ def applyNoPronounRule(line, analyzer, args):
 		convdst    = ''
 
 		# Apply Rules
-		pos = 0
 		for token in tokens:
 
 			# Shift Parameters
@@ -454,16 +452,23 @@ def applyNoPronounRule(line, analyzer, args):
 			if not convsrc == '':
 
 				# Check the next letter is comma or not
-				p = srcline.find(srcsentence)
-				if (p + len(convsrc) < len(srcline) and (srcline[p + len(convsrc)] == '、')):
+				p = sentence.find(convsrc)
+				if (p + len(convsrc) < len(sentence) and (sentence[p + len(convsrc)] == '、')):
 					convsrc = convsrc + '、'
 				
 				sentence = sentence.replace(convsrc, convdst, 1)
-				convsrc == ''
-	
-			pos = pos + 1
+				convsrc = ''
 
 		line = line.replace(srcsentence, sentence, 1)
+
+	# Rule B-1 Another Version
+	line = re.sub("\[[^\[\]]+\.GetSheHe[^\]]*\][がは]、?", '', line)
+
+	# Rule B-2 Another Version
+	line = re.sub("\[[^\[\]]+\.GetHerHis[^\]]*\]の、?", 'その', line)
+
+	# Rule B-3 Another Version
+	line = re.sub("\[[^\[\]]+\.GetHerselfHimself[^\]]*\]、?", '自分自身', line)
 
 	return line
 
@@ -472,7 +477,7 @@ def analyze(path, file, out, log, args):
 	outputflag = False
 
 	# Prepare to Analyze
-	char_filters = [RegexReplaceCharFilter('\[.*\]', ''),
+	char_filters = [RegexReplaceCharFilter('\[[^\[\]]+\]', ''),
 					RegexReplaceCharFilter('§.', ''),
 					]
 
