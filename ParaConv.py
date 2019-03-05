@@ -183,6 +183,7 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 	# Break into Tokens
 	for sentence in sentences:
 		tokens = analyzer.analyze(sentence)
+		srcsentence = sentence
 
 		# Initialize
 		word       = ''
@@ -267,6 +268,41 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 					tada = 'た'
 				convdst = verb + tada
 
+			# Rule 12
+			elif (prebase == 'ですが' and prepart == '接続詞'):
+				convsrc = preword + word
+				convdst = 'だが' + word
+
+			# Replace Words
+			if not convsrc == '':
+				sentence = sentence.replace(convsrc, convdst, 1)
+				convsrc = ''
+
+		else:
+
+			# Check the end of a sentence to force 'dearu'
+			if (args.dearu):
+				pos = srcline.find(sentence)
+				if (pos + len(sentence) < len(srcline) and (srcline[pos + len(sentence)] == '！' or srcline[pos + len(sentence)] == '…')):
+					dearuflag = False
+				else:
+					dearuflag = True
+
+			# Rule 7/13
+			if (prebase == 'ある' and (prepart == '動詞' or prepart == '形容詞') and preform == '連用形' and word == 'ません' and part == '助動詞'):
+				convsrc = preword + word
+				convdst = 'ない'
+
+			# Rule 3
+			elif (prepart == '動詞' and preform == '連用形' and 'ません' in word and part == '助動詞'):
+				convsrc = preword + word.replace('ません', '') + 'ません'
+				convdst = convertVerbForm(prebase, '未然形') + word.replace('ません', '') + 'ない'
+
+			# Rule 5/8 Another Version
+			elif (prepart == '形容詞' and preform == '基本形' and 'です' in word and part == '助動詞'):
+				convsrc = preword + word
+				convdst = preword
+
 			# Rule 5/8
 			elif ('です' in word and part == '助動詞'):
 				convsrc = 'です'
@@ -297,36 +333,6 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 				else:
 					convdst = random.choice(['だろう', 'であろう'])
 
-			# Rule 12
-			elif (prebase == 'ですが' and prepart == '接続詞'):
-				convsrc = preword + word
-				convdst = 'だが' + word
-
-			# Replace Words
-			if not convsrc == '':
-				line = line.replace(convsrc, convdst, 1)
-				convsrc = ''
-
-		else:
-
-			# Check the end of a sentence to force 'dearu'
-			if (args.dearu):
-				pos = srcline.find(sentence)
-				if (pos + len(sentence) < len(srcline) and (srcline[pos + len(sentence)] == '！' or srcline[pos + len(sentence)] == '…')):
-					dearuflag = False
-				else:
-					dearuflag = True
-
-			# Rule 7/13
-			if (prebase == 'ある' and (prepart == '動詞' or prepart == '形容詞') and preform == '連用形' and word == 'ません' and part == '助動詞'):
-				convsrc = preword + word
-				convdst = 'ない'
-
-			# Rule 3
-			elif (prepart == '動詞' and preform == '連用形' and 'ません' in word and part == '助動詞'):
-				convsrc = preword + word.replace('ません', '') + 'ません'
-				convdst = convertVerbForm(prebase, '未然形') + word.replace('ません', '') + 'ない'
-
 			# Rule 5/8 Forced
 			elif (args.da and word[-3:] == 'である' and part == '助動詞'):
 				convsrc = word
@@ -353,8 +359,13 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 
 			# Replace Words
 			if not convsrc == '':
-				line = line.replace(convsrc, convdst, 1)
-				convsrc = ''
+				sentence = sentence[::-1]
+				convsrc  = convsrc[::-1]
+				convdst  = convdst[::-1]
+				sentence = sentence.replace(convsrc, convdst, 1)
+				sentence = sentence[::-1]
+
+			line = line.replace(srcsentence, sentence, 1)
 
 	return line
 
