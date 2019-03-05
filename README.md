@@ -1,18 +1,17 @@
 # ParaConv
 Paradox作品で使用される日本語ローカライズファイルの表記ゆれを自動的に統一するツールです
 
-## できること
+## 概要
+
+### できること
 
 - テキストを敬体（です・ます調）に統一する
 - テキストを常体（だ・である調）に統一する
 - テキストの一部だけを統一する（イベント本文のみなど）
 
-## 対応作品
+### 対応作品
 
-- Europa Universalis IV
-- Crusader Kings II
-- Hearts of Iron IV
-- Stellaris
+    Europa Universalis IV / Crusader Kings II / Hearts of Iron IV / Stellaris
 
 ## 使い方
 
@@ -38,27 +37,30 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
      `$ ParaConv.py --eu4 --keitai utf8/localisation out log`
 
- - ファイル単位でも変換可能
+### 書式
 
-     `$ ParaConv.py --ck2 --joutai --file sample.csv out log`
+     ParaConv.py [--options] input output log
 
-### オプション
+#### フォルダ指定（必須）
 
-     ParaConv.py [--keitai] [--joutai] [--da] [--dearu] [--key KEY] [--file] input output log
+ - `input`：変換元のローカライズファイルがあるフォルダ
+ - `output`：変換後のローカライズファイルが入るフォルダ
+ - `log`：変換結果の差分ファイルが入るフォルダ
+
+#### 作品指定（必須）
+
+ - `--eu4`：Europa Universalis IV
+ - `--ck2`：Crusader Kings II
+ - `--hoi4`：Hearts of Iron IV
+ - `--stellaris`：Stellaris
+
+#### 機能指定（必須）
 
  - `--keitai`：テキストを敬体（です・ます調）に統一する
  - `--joutai`：テキストを常体（だ・である調）に統一する
  - `--da`：テキストを常体に、文末を「だ」に統一する
  - `--dearu`：テキストを常体に、文末を「である」に統一する
- - `--key`：変換対象のキーリストファイルを指定する（後述）
- - `--file`：引数の`input`をファイル名として扱う
-
-    併せて以下のひとつを必ず指定してください
-
- - `--eu4`：Europa Universalis IVの場合に指定する
- - `--ck2`：Crusader Kings IIの場合に指定する
- - `--hoi4`：Hearts of Iron IVの場合に指定する
- - `--stellaris`：Stellarisの場合に指定する
+ - `--nopronoun`：テキストから不要な代名詞を取り除く
 
     完全なオプション一覧は`ParaConv.py -h`で見ることができます
 
@@ -66,15 +68,31 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
 ### イベント本文のみを統一する
 
- - `ParaConvEvent.py`を使用してイベント本文のキーリストを作成します
+ - `ParaConvEvent.py`を使用してイベント本文のキーリストを作成する
 
      `$ ParaConvEvent.py --eu4 events keylist.txt`
 
- - 作成したキーリストを`--key`オプションで`ParaConv.py`に渡します
+ - 作成したキーリストを`--key`オプションで`ParaConv.py`に渡す
 
      `$ ParaConv.py --eu4 --dearu --key keylist.txt utf8/localisation out log`
 
     `ParaConvEvent.py`の完全なオプション一覧は`ParaConvEvent.py -h`で見ることができます
+
+### 修正部分だけを出力する
+
+ - `ParaConv.py`に`--difference`オプションを指定する
+ 
+    `$ ParaConv.py --eu4 --nopronoun --difference utf8/localisation out log`
+ 
+    出力ファイルをmodの`localisation/replace`に入れれば、修正部分だけを置換できます
+
+### 修正前の翻訳を同時に出力する
+
+ - `ParaConv.py`に`--original`オプションを指定する
+
+    `$ ParaConv.py --eu4 --nopronoun --original utf8/localisation out log`
+
+    表示が複数行になるので、イベント本文などに限定して使用してください
 
 ## 制限事項
 
@@ -82,7 +100,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
 ## 今後の予定
 
- - 行頭の「我々は」「彼らは」などを一括して省略する
+ - 変数の代名詞も削除対象に加える
  - セリフと地の文で文体を使い分ける
 
 ## 参考資料
