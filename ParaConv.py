@@ -10,6 +10,7 @@ from janome.charfilter import *
 
 verbdic = {}
 keylist = []
+we_exceptions = {'だけ'}
 mashita_exceptions = ['する', 'せる', 'いる', 'くる']
 
 
@@ -173,7 +174,7 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 	# Split into Sentences
 	if (args.eu4 or args.hoi4 or args.stellaris):
 		maintext = line.split('"')[1].split('"')[0]
-	elif (args.ck2):
+	elif args.ck2:
 		maintext = line.split(';')[1].split(';')[0]
 
 	sentences = re.split('[。？！…]', maintext)
@@ -369,7 +370,106 @@ def applyKeitaiToJoutaiRule(line, analyzer, args):
 	return line
 
 
+def applyNoPronounRule(line, analyzer, args):
+
+	# Split into Sentences
+	if (args.eu4 or args.hoi4 or args.stellaris):
+		maintext = line.split('"')[1].split('"')[0]
+	elif args.ck2:
+		maintext = line.split(';')[1].split(';')[0]
+
+	sentences = re.split('[、。？！…]', maintext)
+	srcline = line
+
+	# Break into Tokens
+	for sentence in sentences:
+		tokens = analyzer.analyze(sentence)
+		srcsentence = sentence
+
+		# Initialize
+		word       = ''
+		preword    = ''
+		prepreword = ''
+		base       = ''
+		prebase    = ''
+		preprebase = ''
+		form       = ''
+		preform    = ''
+		prepreform = ''
+		part       = ['','','','','','','','','']
+		prepart    = ['','','','','','','','','']
+		convsrc    = ''
+		convdst    = ''
+
+		# Apply Rules
+		pos = 0
+		for token in tokens:
+
+			# Shift Parameters
+			prepreword = preword
+			preprebase = prebase
+			prepreform = preform
+			preprepart = prepart
+			preword    = word
+			prebase    = base
+			preform    = form
+			prepart    = part
+
+			# Get Parameters
+			word = token.surface
+			base = token.base_form
+			form = token.infl_form
+			part = token.part_of_speech.split(',')[0]
+
+			# For Debug Purpose
+			if args.token:
+				print(word, base, part, form)
+
+			# Rule A-1
+			if (preword == '我々' and part == '助詞' and (not base in we_exceptions)):
+				convsrc = preword + word
+				convdst = ''
+
+			# Rule A-2
+			if (prepreword == '私' and (preword == 'たち' or preword == '達') and part == '助詞' and (not base in we_exceptions)):
+				convsrc = prepreword + preword + word
+				convdst = ''
+
+			# Rule B-1
+			if (preword == '彼ら' and (word == 'が' or word == 'は')):
+				convsrc = preword + word
+				convdst = ''
+
+			# Rule B-2
+			if (preword == '彼ら' and word == 'の'):
+				convsrc = preword + word
+				convdst = 'その'
+
+			# Rule B-3
+			if (preword == '彼ら' and word == '自身'):
+				convsrc = preword + word
+				convdst = '自分自身'
+
+			# Replace Words
+			if not convsrc == '':
+
+				# Check the next letter is comma or not
+				p = srcline.find(srcsentence)
+				if (p + len(convsrc) < len(srcline) and (srcline[p + len(convsrc)] == '、')):
+					convsrc = convsrc + '、'
+				
+				sentence = sentence.replace(convsrc, convdst, 1)
+				convsrc == ''
+	
+			pos = pos + 1
+
+		line = line.replace(srcsentence, sentence, 1)
+
+	return line
+
 def analyze(path, file, out, log, args):
+
+	outputflag = False
 
 	# Prepare to Analyze
 	char_filters = [RegexReplaceCharFilter('\[.*\]', ''),
@@ -387,14 +487,14 @@ def analyze(path, file, out, log, args):
 
 		# Remove Line Feed
 		line = line.rstrip('\n')
-		srcline = line
+		linesrc = line
 
 		# Skip No Main Text
 		if (args.eu4 or args.hoi4 or args.stellaris):
 			if line.find('"') == -1:
 				out.write(line + '\n')
 				continue
-		elif (args.ck2):
+		elif args.ck2:
 			if line[0] == '#':
 				out.write(line + '\n')
 				continue
@@ -403,10 +503,12 @@ def analyze(path, file, out, log, args):
 		if args.key:
 			if (args.eu4 or args.hoi4 or args.stellaris):
 				key = re.search("^\s*([^\s:]+):", line).group(1)
-			elif (args.ck2):
+			elif args.ck2:
 				key = re.search("^([^;]+);", line).group(1)
 			if not key in keylist:
-				out.write(line + '\n')
+				if not args.difference:
+					outputflag = True
+					out.write(line + '\n')
 				continue
 
 		# For Debug Purpose
@@ -416,39 +518,63 @@ def analyze(path, file, out, log, args):
 		# Apply Rules
 		if args.keitai:
 			line = applyJoutaiToKeitaiRule(line, analyzer, args)
-		elif args.joutai:
+		if args.joutai:
 			line = applyKeitaiToJoutaiRule(line, analyzer, args)
-
-		# Output
-		out.write(line + '\n')
+		if args.nopronoun:
+			line = applyNoPronounRule(line, analyzer, args)
 
 		# Logging
-		if not line == srcline:
-			log.write('- ' + srcline + '\n')
-			log.write('+ ' + line + '\n\n')
+		if not line == linesrc:
+			log.write('- ' + linesrc + '\n')
+			log.write('+ ' + line    + '\n\n')
+
+		# Output
+		if (not args.difference or not line == linesrc):
+			outputflag = True
+			if (not args.original or line == linesrc):
+				out.write(line + '\n')
+			else:
+				if (args.eu4 or args.hoi4 or args.stellaris):
+					maintext    = line   .split('"')[1].split('"')[0]
+					maintextsrc = linesrc.split('"')[1].split('"')[0]
+				elif args.ck2:
+					maintext    = line   .split(';')[1].split(';')[0]
+					maintextsrc = linesrc.split(';')[1].split(';')[0]
+				maintext    = maintext   .replace('\\n', '\\\\n')
+				maintextsrc = maintextsrc.replace('\\n', '\\\\n')
+				if (args.eu4 or args.hoi4 or args.stellaris):
+					line = re.sub("\"[^\"]+\"", "\"" + maintext + '\\\\n\\\\n＜原文＞\\\\n' + maintextsrc + '\"', line, 1)
+				elif args.ck2:
+					line = re.sub("^([^;]*);[^;]+;", linesrc.split(';')[0] + ";" + maintext + '\\\\n\\\\n＜原文＞\\\\n' + maintextsrc + ';', line, 1)
+				out.write(line + '\n')
 
 	text.close()
+
+	return outputflag
 
 
 def main():
 
 	# Parse Command Line Options
 	parser = argparse.ArgumentParser()
-	parser.add_argument('input'      , help = 'input folder')
-	parser.add_argument('output'     , help = 'output folder')
-	parser.add_argument('log'        , help = 'log folder')
-	parser.add_argument('--keitai'   , help = 'convert into keitai (desu, masu)', action = 'store_true')
-	parser.add_argument('--joutai'   , help = 'convert into joutai (da, dearu)' , action = 'store_true')
-	parser.add_argument('--da'       , help = 'convert into joutai (da only)'   , action = 'store_true')
-	parser.add_argument('--dearu'    , help = 'convert into joutai (dearu only)', action = 'store_true')
-	parser.add_argument('--key'      , help = 'supply a key file'               , type = str)
-	parser.add_argument('--file'     , help = 'regard input as a file'          , action = 'store_true')
-	parser.add_argument('--eu4'      , help = 'set for Europa Universalis IV'   , action = 'store_true')
-	parser.add_argument('--ck2'      , help = 'set for Crusader Kings II'       , action = 'store_true')
-	parser.add_argument('--hoi4'     , help = 'set for Hearts of Iron IV'       , action = 'store_true')
-	parser.add_argument('--stellaris', help = 'set for Stellaris'               , action = 'store_true')
-	parser.add_argument('--line'     , help = 'show processing lines'           , action = 'store_true')
-	parser.add_argument('--token'    , help = 'show processing tokens'          , action = 'store_true')
+	parser.add_argument('input'       , help = 'input folder')
+	parser.add_argument('output'      , help = 'output folder')
+	parser.add_argument('log'         , help = 'log folder')
+	parser.add_argument('--keitai'    , help = 'convert into keitai (desu, masu)', action = 'store_true')
+	parser.add_argument('--joutai'    , help = 'convert into joutai (da, dearu)' , action = 'store_true')
+	parser.add_argument('--da'        , help = 'convert into joutai (da only)'   , action = 'store_true')
+	parser.add_argument('--dearu'     , help = 'convert into joutai (dearu only)', action = 'store_true')
+	parser.add_argument('--nopronoun' , help = 'omit useless pronouns'           , action = 'store_true')
+	parser.add_argument('--key'       , help = 'supply a key file'               , type = str)
+	parser.add_argument('--file'      , help = 'regard input as a file'          , action = 'store_true')
+	parser.add_argument('--difference', help = 'output differences only'         , action = 'store_true')
+	parser.add_argument('--original'  , help = 'output original texts'           , action = 'store_true')
+	parser.add_argument('--eu4'       , help = 'set for Europa Universalis IV'   , action = 'store_true')
+	parser.add_argument('--ck2'       , help = 'set for Crusader Kings II'       , action = 'store_true')
+	parser.add_argument('--hoi4'      , help = 'set for Hearts of Iron IV'       , action = 'store_true')
+	parser.add_argument('--stellaris' , help = 'set for Stellaris'               , action = 'store_true')
+	parser.add_argument('--line'      , help = 'show processing lines'           , action = 'store_true')
+	parser.add_argument('--token'     , help = 'show processing tokens'          , action = 'store_true')
 
 	args = parser.parse_args()
 	if (args.da or args.dearu):
@@ -489,9 +615,11 @@ def main():
 		logfilename = args.log    + '/' + file + '.diff'
 		out = open(outfilename, 'w', encoding = 'utf_8_sig')
 		log = open(logfilename, 'w', encoding = 'utf_8_sig')
-		analyze(args.input, file, out, log, args)
+		outputflag = analyze(args.input, file, out, log, args)
 		out.close()
 		log.close()
+		if not outputflag:
+			os.remove(outfilename)
 		if os.path.getsize(logfilename) == 0:
 			os.remove(logfilename)
 
