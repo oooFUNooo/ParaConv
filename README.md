@@ -54,7 +54,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
  - `--hoi4`：Hearts of Iron IV
  - `--stellaris`：Stellaris
 
-#### 機能指定（必須）
+#### 機能指定
 
  - `--keitai`：テキストを敬体（です・ます調）に統一する
  - `--joutai`：テキストを常体（だ・である調）に統一する
@@ -84,7 +84,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
  
     `$ ParaConv.py --eu4 --nopronoun --difference utf8/localisation out log`
  
-    出力ファイルをmodの`localisation/replace`に入れれば、修正部分だけを置換できます
+    CK2以外では、出力ファイルを`localisation/replace`フォルダに入れれば、修正部分だけを置換できます
 
 ## 制限事項
 
