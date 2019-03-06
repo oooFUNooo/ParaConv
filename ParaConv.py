@@ -506,6 +506,12 @@ def analyze(path, file, out, log, args):
 		line = line.rstrip('\n')
 		linesrc = line
 
+		# Skip Comment
+		if (args.hoi4 or args.stellaris):
+			if re.match('^[\s]*#', line):
+				out.write(line + '\n')
+				continue
+
 		# Skip No Main Text
 		if (args.eu4 or args.hoi4 or args.stellaris):
 			if line.find('"') == -1:
@@ -557,10 +563,13 @@ def analyze(path, file, out, log, args):
 				else:
 					if (args.eu4 or args.hoi4 or args.stellaris):
 						maintext = line.split('"')[1].split('"')[0]
-						line = re.sub("\"[^\"]+\"", '\"' + maintext + '\\\\n\\\\n\* ' + key + '\"', line, 1)
 					elif args.ck2:
 						maintext = line.split(';')[1].split(';')[0]
-						line = re.sub("^([^;]*);[^;]+;", linesrc.split(';')[0] + ';' + maintext + '\\\\n\\\\n\* ' + key + ';', line, 1)
+					maintext = maintext.replace('\\n', '\\\\n')
+					if (args.eu4 or args.hoi4 or args.stellaris):
+						line = re.sub("\"[^\"]+\"", '\"' + maintext + '\\\\n' + key + '\"', line, 1)
+					elif args.ck2:
+						line = re.sub("^([^;]*);[^;]+;", linesrc.split(';')[0] + ';' + maintext + '\\\\n' + key + ';', line, 1)
 					out.write(line + '\n')
 			else:
 				if (args.eu4 or args.hoi4 or args.stellaris):
@@ -635,18 +644,21 @@ def main():
 
 	# Analyze Target Files
 	if (args.file):
-		filepath = os.path.split(args.input)
-		files = [filepath[1]]
-		args.input = filepath[0]
+		found = [args.input]
 	else:
-		files = os.listdir(args.input)
-	for file in files:
+		found = []
+		for root, dirs, files in os.walk(args.input):
+			for filename in files:
+				found.append(os.path.join(root, filename))
+	for path in found:
+		file   = os.path.basename(path)
+		folder = os.path.dirname (path)
 		print('Processing ' + file + '...')
 		outfilename = args.output + '/' + file
 		logfilename = args.log    + '/' + file + '.diff'
 		out = open(outfilename, 'w', encoding = 'utf_8_sig')
 		log = open(logfilename, 'w', encoding = 'utf_8_sig')
-		outputflag = analyze(args.input, file, out, log, args)
+		outputflag = analyze(folder, file, out, log, args)
 		out.close()
 		log.close()
 		if not outputflag:
