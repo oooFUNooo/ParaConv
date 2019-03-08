@@ -6,10 +6,11 @@ import argparse
 import urllib.parse
 
 
-keylist  = []
 transdic = {}
+includekeylist = []
+excludekeylist = []
 
-headers  = {
+headers = {
 	'Connection': 'keep-alive',
 }
 
@@ -84,15 +85,25 @@ def translate(path, file, out, encode, args):
 			key = re.search(r"^([^;]+);", line).group(1)
 
 		# Skip No Main Text 2
-		if maintext == '':
+		if re.match(r'^\s*$', maintext):
 			if not args.difference:
 				out.write(line + '\n')
 				outputflag = True
 			continue
 
-		# Skip Not Specified Keys
+		# Skip Not Specified Keys 1
 		if args.key:
-			if not key in keylist:
+			if not key in includekeylist:
+				if (args.translated and transdic.get(key) and not transdic.get(key) == maintext):
+					line = line.replace(maintext, transdic.get(key))
+				if not args.difference:
+					out.write(line + '\n')
+					outputflag = True
+				continue
+
+		# Skip Not Specified Keys 2
+		if args.keyexclude:
+			if key in excludekeylist:
 				if (args.translated and transdic.get(key) and not transdic.get(key) == maintext):
 					line = line.replace(maintext, transdic.get(key))
 				if not args.difference:
@@ -170,7 +181,7 @@ def translate(path, file, out, encode, args):
 		transtext = transtext.replace(' ', '')
 
 		if args.mark:
-			transtext = '※自動翻訳※\\n' + transtext
+			transtext = '※自動翻訳※ ' + transtext
 
 		# Output
 		line = line.replace(srctext, transtext)
@@ -198,7 +209,9 @@ def main():
 	parser.add_argument('--url'       , help = 'specify translator\'s URL (before text)'    , type = str)
 	parser.add_argument('--urloption' , help = 'specify translator\'s options (after text)' , type = str)
 	parser.add_argument('--translated', help = 'specify translated text folder'             , type = str)
-	parser.add_argument('--key'       , help = 'supply a key file'                          , type = str)
+	parser.add_argument('--key'       , help = 'supply a key file for include'              , type = str)
+	parser.add_argument('--keyinclude', help = 'supply a key file for include (same as key)', type = str)
+	parser.add_argument('--keyexclude', help = 'supply a key file for exclude'              , type = str)
 	parser.add_argument('--difference', help = 'output differences only'                    , action = 'store_true')
 	parser.add_argument('--file'      , help = 'regard input as a file'                     , action = 'store_true')
 	parser.add_argument('--mark'      , help = 'mark as translated'                         , action = 'store_true')
@@ -226,12 +239,23 @@ def main():
 			createTranslatedDictionary(f, args)
 			f.close()
 
-	# Create Key List
+	# Create Include Key List
+	if args.keyinclude:
+		args.key = args.keyinclude
+
 	if args.key:
 		keys = open(args.key, 'r', encoding = 'utf_8_sig')
 		for key in keys:
 			key = key.rstrip('\n')
-			keylist.append(key)
+			includekeylist.append(key)
+		keys.close()
+
+	# Create Exclude Key List
+	if args.keyexclude:
+		keys = open(args.keyexclude, 'r', encoding = 'utf_8_sig')
+		for key in keys:
+			key = key.rstrip('\n')
+			excludekeylist.append(key)
 		keys.close()
 
 	# Create Folders
