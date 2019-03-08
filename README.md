@@ -1,5 +1,5 @@
 # ParaConv
-Paradox作品で使用される日本語ローカライズファイルの表記ゆれを自動的に統一するツールです
+Paradox作品で使用される日本語ローカライズファイルの翻訳を補助するツール群です
 
 ## 概要
 
@@ -9,6 +9,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 - テキストを常体（だ・である調）に統一する
 - テキストから不要な代名詞を削除する
 - テキストの一部だけを変換する
+- テキストの自動翻訳を補助する
 
 ### 対応作品
 
@@ -73,7 +74,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
      `$ ParaConvKey.py --eu4 --include _desc --file sample.yml keylist.txt`（特定の文字列を含むキーを抽出）
 
-     `$ ParaConvEvent.py --eu4 events keylist.txt`（イベント本文に該当するキーを抽出）
+     `$ ParaConvEvent.py --eu4 events keylist.txt`（イベントの本文に相当するキーを抽出）
 
  - 作成したリストを`--key`オプションで`ParaConv.py`に渡す
 
@@ -89,17 +90,27 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
  
     CK2以外では、出力ファイルを`localisation/replace`フォルダに入れれば、修正部分だけを置換できます
 
+### 英文を自動翻訳する
+
+ - `ParaConvTrans.py`に翻訳エンジンのURL（文章の前の部分）とオプション（文章の後の部分）を渡す
+
+    `$ ParaConvTrans.py --eu4 --url https://... --urloption %%26source=en%%26target=ja localisation out`
+
+    翻訳エンジンは末尾の参考資料などを基に各自ご用意ください（簡単に自作できます）
+
+    Windowsの場合は、URL中の`&`を`%%26`に置き換えてください
+
 ## 制限事項
 
  - 敬語には対応していません
 
 ## 今後の予定
 
- - 自動翻訳と連動する
  - セリフと地の文で文体を使い分ける
 
 ## 参考資料
 
  - mocobeta『[janome - Japanese morphological analysis engine written in pure Python](https://github.com/mocobeta/janome)』
+ - tanabee『[3 分で作る無料の翻訳 API with Google Apps Script](https://qiita.com/tanabee/items/c79c5c28ba0537112922)』
  - 林由紀子、松原茂樹『[自然な読み上げ音声出力のための書き言葉から話し言葉へのテキスト変換](http://slp.itc.nagoya-u.ac.jp/web/papers/2007/hayashi_SLP66.pdf)』言語処理学会第14回年次大会発表論文集, pp.790-793, 2008.
  - 一般社団法人 日本翻訳連盟『[JTF日本語標準スタイルガイド（翻訳用）](https://www.jtf.jp/jp/style_guide/pdf/jtf_style_guide.pdf)』
