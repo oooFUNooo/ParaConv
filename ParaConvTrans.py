@@ -6,9 +6,10 @@ import argparse
 import urllib.parse
 
 
+keylist  = []
 transdic = {}
 
-headers = {
+headers  = {
 	'Connection': 'keep-alive',
 }
 
@@ -47,6 +48,7 @@ def createTranslatedDictionary(file, args):
 
 def translate(path, file, out, encode, args):
 
+	outputflag = False
 	text = open(path + '/' + file, 'r', encoding = encode)
 
 	# Translate
@@ -84,11 +86,23 @@ def translate(path, file, out, encode, args):
 			maintext = line.split(';')[1].split(';')[0]
 		srctext = maintext
 
+		# Skip Not Specified Keys
+		if args.key:
+			if not key in keylist:
+				if (args.translated and transdic.get(key) and not transdic.get(key) == maintext):
+					line = line.replace(maintext, transdic.get(key))
+				if not args.difference:
+					out.write(line + '\n')
+					outputflag = True
+				continue
+
 		# Skip Translated Keys
 		if args.translated:
-			if not transdic.get(key) == maintext:
+			if transdic.get(key) and not transdic.get(key) == maintext:
 				line = line.replace(maintext, transdic.get(key))
-				out.write(line + '\n')
+				if not args.difference:
+					out.write(line + '\n')
+					outputflag = True
 				continue
 
 		# For Debug Purpose
@@ -156,11 +170,14 @@ def translate(path, file, out, encode, args):
 		# Output
 		line = line.replace(srctext, transtext)
 		out.write(line + '\n')
+		outputflag = True
 
 		# Wait
 		time.sleep(0.1)
 
 	text.close()
+
+	return outputflag
 
 
 def main():
@@ -177,6 +194,7 @@ def main():
 	parser.add_argument('--urloption' , help = 'specify translator\'s options (after text)' , type = str)
 	parser.add_argument('--translated', help = 'specify translated text folder'             , type = str)
 	parser.add_argument('--key'       , help = 'supply a key file'                          , type = str)
+	parser.add_argument('--difference', help = 'output differences only'                    , action = 'store_true')
 	parser.add_argument('--file'      , help = 'regard input as a file'                     , action = 'store_true')
 	parser.add_argument('--mark'      , help = 'mark as translated'                         , action = 'store_true')
 	parser.add_argument('--line'      , help = 'show processing lines'                      , action = 'store_true')
@@ -203,6 +221,14 @@ def main():
 			createTranslatedDictionary(f, args)
 			f.close()
 
+	# Create Key List
+	if args.key:
+		keys = open(args.key, 'r', encoding = 'utf_8_sig')
+		for key in keys:
+			key = key.rstrip('\n')
+			keylist.append(key)
+		keys.close()
+
 	# Create Folders
 	if not os.path.isdir(args.output):
 		os.mkdir(args.output)
@@ -221,8 +247,10 @@ def main():
 		print('Processing ' + file + '...')
 		outfilename = args.output + '/' + file
 		out = open(outfilename, 'w', encoding = encode)
-		translate(folder, file, out, encode, args)
+		outputflag = translate(folder, file, out, encode, args)
 		out.close()
+		if not outputflag:
+			os.remove(outfilename)
 
 
 if __name__ == "__main__":
