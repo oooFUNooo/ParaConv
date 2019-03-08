@@ -71,9 +71,9 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
  - `ParaConvKey.py`または`ParaConvEvent.py`を使用して変換したいキーのリストを作成する
 
-     `$ ParaConvKey.py --eu4 --include _desc --file sample.yml keylist.txt`
+     `$ ParaConvKey.py --eu4 --include _desc --file sample.yml keylist.txt`（特定の文字列を含むキーを抽出）
 
-     `$ ParaConvEvent.py --eu4 events keylist.txt`
+     `$ ParaConvEvent.py --eu4 events keylist.txt`（イベント本文に該当するキーを抽出）
 
  - 作成したリストを`--key`オプションで`ParaConv.py`に渡す
 
