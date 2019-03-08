@@ -518,7 +518,7 @@ def analyze(path, file, out, log, encode, args):
 				out.write(line + '\n')
 				continue
 		elif args.ck2:
-			if line[0] == '#':
+			if line.find(';') == -1:
 				out.write(line + '\n')
 				continue
 
@@ -609,9 +609,9 @@ def main():
 	parser.add_argument('--nopronoun'  , help = 'omit useless pronouns'           , action = 'store_true')
 	parser.add_argument('--difference' , help = 'output differences only'         , action = 'store_true')
 	parser.add_argument('--original'   , help = 'output with original texts'      , action = 'store_true')
-	parser.add_argument('--mark'       , help = 'mark as converted'               , action = 'store_true')
 	parser.add_argument('--key'        , help = 'supply a key file'               , type = str)
 	parser.add_argument('--file'       , help = 'regard input as a file'          , action = 'store_true')
+	parser.add_argument('--mark'       , help = 'mark as converted'               , action = 'store_true')
 	parser.add_argument('--line'       , help = 'show processing lines'           , action = 'store_true')
 	parser.add_argument('--token'      , help = 'show processing tokens'          , action = 'store_true')
 	parser.add_argument('--noexception', help = 'accept no exceptions'            , action = 'store_true')
