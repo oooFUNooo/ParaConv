@@ -3,9 +3,9 @@ import re
 import argparse
 
 
-def analyze(path, file, out, encord, args):
+def analyze(path, file, out, encode, args):
 
-	text = open(path + '/' + file, 'r', encoding = encord)
+	text = open(path + '/' + file, 'r', encoding = encode)
 
 	# Analyze
 	for line in text:
@@ -18,7 +18,7 @@ def analyze(path, file, out, encord, args):
 			print(line)
 
 		# Extract Key
-		result = re.search("desc\s*=\s*\"?([^\s\"{]+)\"?$", line)
+		result = re.search(r"desc\s*=\s*\"?([^\s\"{]+)\"?$", line)
 
 		# Output
 		if result:
@@ -42,15 +42,15 @@ def main():
 	parser.add_argument('--line'     , help = 'show processing lines'        , action = 'store_true')
 	args = parser.parse_args()
 
-	# Set Encording for Each Title
+	# Set encoding for Each Title
 	if args.eu4:
-		encord = 'ISO-8859-2'
+		encode = 'ISO-8859-2'
 	elif args.ck2:
-		encord = 'utf_8'
+		encode = 'utf_8'
 	elif args.hoi4:
-		encord = 'utf_8_sig'
+		encode = 'utf_8_sig'
 	elif args.stellaris:
-		encord = 'utf_8'
+		encode = 'utf_8'
 
 	# Analyze Target Files
 	if (args.file):
@@ -68,7 +68,7 @@ def main():
 		file   = os.path.basename(path)
 		folder = os.path.dirname (path)
 		print('Processing ' + file + '...')
-		analyze(folder, file, out, encord, args)
+		analyze(folder, file, out, encode, args)
 	out.close()
 
 

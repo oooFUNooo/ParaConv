@@ -10,7 +10,7 @@ from janome.charfilter import *
 
 verbdic = {}
 keylist = []
-we_exceptions = {'だけ'}
+we_exceptions = ['だけ']
 mashita_exceptions = ['する', 'せる', 'いる', 'くる']
 
 
@@ -462,13 +462,13 @@ def applyNoPronounRule(line, analyzer, args):
 		line = line.replace(srcsentence, sentence, 1)
 
 	# Rule B-1 Another Version
-	line = re.sub("\[[^\[\]]+\.GetSheHe[^\]]*\][がは]、?", '', line)
+	line = re.sub(r"\[[^\[\]]+\.GetSheHe[^\]]*\][がは]、?", '', line)
 
 	# Rule B-2 Another Version
-	line = re.sub("\[[^\[\]]+\.GetHerHis[^\]]*\]の、?", 'その', line)
+	line = re.sub(r"\[[^\[\]]+\.GetHerHis[^\]]*\]の、?", 'その', line)
 
 	# Rule B-3 Another Version
-	line = re.sub("\[[^\[\]]+\.GetHerselfHimself[^\]]*\]、?", '自分自身', line)
+	line = re.sub(r"\[[^\[\]]+\.GetHerselfHimself[^\]]*\]、?", '自分自身', line)
 
 	return line
 
@@ -484,20 +484,20 @@ def applyExceptionRule(line, key, args):
 	return line
 
 
-def analyze(path, file, out, log, args):
+def analyze(path, file, out, log, encode, args):
 
 	outputflag = False
 
 	# Prepare to Analyze
-	char_filters = [RegexReplaceCharFilter('\[[^\[\]]+\]', ''),
-					RegexReplaceCharFilter('§.', ''),
+	char_filters = [RegexReplaceCharFilter(r'\[[^\[\]]+\]', ''),
+					RegexReplaceCharFilter(r'§.', ''),
 					]
 
 	tokenizer = Tokenizer()
 
 	analyzer = Analyzer(char_filters, tokenizer)
 
-	text = open(path + '/' + file, 'r', encoding = 'utf_8_sig')
+	text = open(path + '/' + file, 'r', encoding = encode)
 
 	# Analyze
 	for line in text:
@@ -508,7 +508,7 @@ def analyze(path, file, out, log, args):
 
 		# Skip Comment
 		if (args.ck2 or args.hoi4 or args.stellaris):
-			if re.match('^[\s]*#', line):
+			if re.match(r'^[\s]*#', line):
 				out.write(line + '\n')
 				continue
 
@@ -524,9 +524,9 @@ def analyze(path, file, out, log, args):
 
 		# Check Key
 		if (args.eu4 or args.hoi4 or args.stellaris):
-			key = re.search("^\s*([^\s:]+):", line).group(1)
+			key = re.search(r"^\s*([^\s:]+):", line).group(1)
 		elif args.ck2:
-			key = re.search("^([^;]+);", line).group(1)
+			key = re.search(r"^([^;]+);", line).group(1)
 
 		if args.key:
 			if not key in keylist:
@@ -620,6 +620,16 @@ def main():
 	if (args.da or args.dearu):
 		args.joutai = True
 
+	# Set encoding for Each Title
+	if args.eu4:
+		encode = 'utf_8_sig'
+	elif args.ck2:
+		encode = 'ISO-8859-1'
+	elif args.hoi4:
+		encode = 'utf_8_sig'
+	elif args.stellaris:
+		encode = 'utf_8_sig'
+
 	# Create Key List
 	if args.key:
 		keys = open(args.key, 'r', encoding = 'utf_8_sig')
@@ -656,9 +666,9 @@ def main():
 		print('Processing ' + file + '...')
 		outfilename = args.output + '/' + file
 		logfilename = args.log    + '/' + file + '.diff'
-		out = open(outfilename, 'w', encoding = 'utf_8_sig')
+		out = open(outfilename, 'w', encoding = encode)
 		log = open(logfilename, 'w', encoding = 'utf_8_sig')
-		outputflag = analyze(folder, file, out, log, args)
+		outputflag = analyze(folder, file, out, log, encode, args)
 		out.close()
 		log.close()
 		if not outputflag:

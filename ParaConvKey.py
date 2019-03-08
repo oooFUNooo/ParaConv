@@ -3,9 +3,9 @@ import re
 import argparse
 
 
-def analyze(path, file, out, encord, args):
+def analyze(path, file, out, encode, args):
 
-	text = open(path + '/' + file, 'r', encoding = encord)
+	text = open(path + '/' + file, 'r', encoding = encode)
 
 	# Analyze
 	for line in text:
@@ -19,14 +19,14 @@ def analyze(path, file, out, encord, args):
 
 		# Skip Comment
 		if (args.ck2 or args.hoi4 or args.stellaris):
-			if re.match('^[\s]*#', line):
+			if re.match(r'^[\s]*#', line):
 				continue
 
 		# Extract Key
 		if (args.eu4 or args.hoi4 or args.stellaris):
-			result = re.search("^\s+([^\s:]+):", line)
+			result = re.search(r"^\s+([^\s:]+):", line)
 		elif args.ck2:
-			result = re.search("^([^;]+);", line)
+			result = re.search(r"^([^;]+);", line)
 
 		if result:
 			key = result.group(1)
@@ -59,15 +59,15 @@ def main():
 	parser.add_argument('--line'     , help = 'show processing lines'                      , action = 'store_true')
 	args = parser.parse_args()
 
-	# Set Encording for Each Title
+	# Set encoding for Each Title
 	if args.eu4:
-		encord = 'utf_8_sig'
+		encode = 'utf_8_sig'
 	elif args.ck2:
-		encord = 'ISO-8859-1'
+		encode = 'ISO-8859-1'
 	elif args.hoi4:
-		encord = 'utf_8_sig'
+		encode = 'utf_8_sig'
 	elif args.stellaris:
-		encord = 'utf_8_sig'
+		encode = 'utf_8_sig'
 
 	# Analyze Target Files
 	if (args.file):
@@ -85,7 +85,7 @@ def main():
 		file   = os.path.basename(path)
 		folder = os.path.dirname (path)
 		print('Processing ' + file + '...')
-		analyze(folder, file, out, encord, args)
+		analyze(folder, file, out, encode, args)
 	out.close()
 
 
