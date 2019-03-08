@@ -63,15 +63,19 @@ def translate(path, file, out, encode, args):
 				out.write(line + '\n')
 				continue
 
-		# Skip No Main Text
+		# Skip No Main Text 1
 		if (args.eu4 or args.hoi4 or args.stellaris):
 			if line.find('"') == -1:
 				out.write(line + '\n')
 				continue
+			else:
+				maintext = line.split('"')[1].split('"')[0]
 		elif args.ck2:
 			if line.find(';') == -1:
 				out.write(line + '\n')
 				continue
+			else:
+				maintext = line.split(';')[1].split(';')[0]
 
 		# Check Key
 		if (args.eu4 or args.hoi4 or args.stellaris):
@@ -79,12 +83,12 @@ def translate(path, file, out, encode, args):
 		elif args.ck2:
 			key = re.search(r"^([^;]+);", line).group(1)
 
-		# Extract Main Text
-		if (args.eu4 or args.hoi4 or args.stellaris):
-			maintext = line.split('"')[1].split('"')[0]
-		elif args.ck2:
-			maintext = line.split(';')[1].split(';')[0]
-		srctext = maintext
+		# Skip No Main Text 2
+		if maintext == '':
+			if not args.difference:
+				out.write(line + '\n')
+				outputflag = True
+			continue
 
 		# Skip Not Specified Keys
 		if args.key:
@@ -110,6 +114,7 @@ def translate(path, file, out, encode, args):
 			print(line)
 
 		# Escape Special Texts
+		srctext = maintext
 		escapedic = {}
 		counter = 0;
 

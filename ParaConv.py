@@ -512,15 +512,19 @@ def analyze(path, file, out, log, encode, args):
 				out.write(line + '\n')
 				continue
 
-		# Skip No Main Text
+		# Skip No Main Text 1
 		if (args.eu4 or args.hoi4 or args.stellaris):
 			if line.find('"') == -1:
 				out.write(line + '\n')
 				continue
+			else:
+				maintext = line.split('"')[1].split('"')[0]
 		elif args.ck2:
 			if line.find(';') == -1:
 				out.write(line + '\n')
 				continue
+			else:
+				maintext = line.split(';')[1].split(';')[0]
 
 		# Check Key
 		if (args.eu4 or args.hoi4 or args.stellaris):
@@ -534,6 +538,13 @@ def analyze(path, file, out, log, encode, args):
 					outputflag = True
 					out.write(line + '\n')
 				continue
+
+		# Skip No Main Text 2
+		if maintext == '':
+			if not args.difference:
+				outputflag = True
+				out.write(line + '\n')
+			continue
 
 		# For Debug Purpose
 		if args.line:
