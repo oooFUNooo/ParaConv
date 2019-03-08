@@ -37,6 +37,7 @@ def main():
 	parser.add_argument('--ck2'      , help = 'set for Crusader Kings II'    , action = 'store_true')
 	parser.add_argument('--hoi4'     , help = 'set for Hearts of Iron IV'    , action = 'store_true')
 	parser.add_argument('--stellaris', help = 'set for Stellaris'            , action = 'store_true')
+	parser.add_argument('--append'   , help = 'append mode (not overwrite)'  , action = 'store_true')
 	parser.add_argument('--file'     , help = 'regard input as a file'       , action = 'store_true')
 	parser.add_argument('--line'     , help = 'show processing lines'        , action = 'store_true')
 	args = parser.parse_args()
@@ -53,15 +54,21 @@ def main():
 
 	# Analyze Target Files
 	if (args.file):
-		filepath = os.path.split(args.input)
-		files = [filepath[1]]
-		args.input = filepath[0]
+		found = [args.input]
 	else:
-		files = os.listdir(args.input)
-	out = open(args.output, 'w', encoding = 'utf_8_sig')
-	for file in files:
+		found = []
+		for root, dirs, files in os.walk(args.input):
+			for filename in files:
+				found.append(os.path.join(root, filename))
+	if (args.append):
+		out = open(args.output, 'a', encoding = 'utf_8_sig')
+	else:
+		out = open(args.output, 'w', encoding = 'utf_8_sig')
+	for path in found:
+		file   = os.path.basename(path)
+		folder = os.path.dirname (path)
 		print('Processing ' + file + '...')
-		analyze(args.input, file, out, encord, args)
+		analyze(folder, file, out, encord, args)
 	out.close()
 
 

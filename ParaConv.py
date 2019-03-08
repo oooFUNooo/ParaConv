@@ -507,7 +507,7 @@ def analyze(path, file, out, log, args):
 		linesrc = line
 
 		# Skip Comment
-		if (args.hoi4 or args.stellaris):
+		if (args.ck2 or args.hoi4 or args.stellaris):
 			if re.match('^[\s]*#', line):
 				out.write(line + '\n')
 				continue
