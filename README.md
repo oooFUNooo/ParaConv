@@ -7,7 +7,8 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
 - テキストを敬体（です・ます調）に統一する
 - テキストを常体（だ・である調）に統一する
-- テキストの一部だけを統一する（イベント本文のみなど）
+- テキストから不要な代名詞を削除する
+- テキストの一部だけを変換する
 
 ### 対応作品
 
@@ -33,7 +34,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 ### 使用例
 
  - [ParaTranz](https://paratranz.cn/projects)からローカライズファイルをダウンロードする
- - `ParaConv.py`に変換オプションと変換対象のフォルダ、結果の出力先フォルダ、ログの出力先フォルダを渡す
+ - `ParaConv.py`に対象作品と変換オプション、各種フォルダのパスを渡す
 
      `$ ParaConv.py --eu4 --keitai utf8/localisation out log`
 
@@ -66,17 +67,19 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
 ## 高度な使い方
 
-### イベント本文のみを変換する
+### 特定のキーのみを変換する
 
- - `ParaConvEvent.py`を使用してイベント本文のキーリストを作成する
+ - `ParaConvKey.py`または`ParaConvEvent.py`を使用して変換したいキーのリストを作成する
+
+     `$ ParaConvKey.py --eu4 --include _desc --file sample.yml keylist.txt`
 
      `$ ParaConvEvent.py --eu4 events keylist.txt`
 
- - 作成したキーリストを`--key`オプションで`ParaConv.py`に渡す
+ - 作成したリストを`--key`オプションで`ParaConv.py`に渡す
 
      `$ ParaConv.py --eu4 --dearu --key keylist.txt utf8/localisation out log`
 
-    `ParaConvEvent.py`の完全なオプション一覧は`ParaConvEvent.py -h`で見ることができます
+    `ParaConvKey.py`と`ParaConvEvent.py`のオプション一覧は`-h`オプションで見ることができます
 
 ### 変換したキーだけを出力する
 
@@ -92,6 +95,7 @@ Paradox作品で使用される日本語ローカライズファイルの表記�
 
 ## 今後の予定
 
+ - 自動翻訳と連動する
  - セリフと地の文で文体を使い分ける
 
 ## 参考資料
