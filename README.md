@@ -16,9 +16,7 @@ Paradox作品で使用される日本語ローカライズファイルの翻訳�
 
 ### 使用例
 
-ParaConvを使用して、自動的に英語の原文を翻訳し、さらに自動校正した例です
-
-原文はいずれもEU4のMod『Extended Timeline』より引用しました
+ParaConvを使用して、自動的に英語の原文を翻訳し、さらに自動校正した例です（原文は『Extended Timeline』より引用）
 
 <details><summary>使用例1</summary><div>
 
