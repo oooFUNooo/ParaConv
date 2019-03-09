@@ -5,15 +5,56 @@ Paradox作品で使用される日本語ローカライズファイルの翻訳�
 
 ### できること
 
-- テキストを敬体（です・ます調）に統一する
-- テキストを常体（だ・である調）に統一する
+- テキストを敬体（です・ます調）または常体（だ・である調）に統一する
 - テキストから不要な代名詞を削除する
-- テキストの一部だけを変換する
+- テキストの一部を指定して変換する
 - テキストの自動翻訳を補助する
 
 ### 対応作品
 
     Europa Universalis IV / Crusader Kings II / Hearts of Iron IV / Stellaris
+
+### 使用例
+
+英語の原文を自動翻訳し、さらに自動校正した例です。ParaConvを使用することで、この流れを完全に自動化できます
+
+<details><summary>使用例1</summary><div>
+
+>Rainfall is a critical factor to the success of our agriculture. Irrigation will help offset droughts and bring less fertile lands into cultivation.
+
+自動翻訳後
+>雨は私たちの農業の成功にとって重要な要素です。灌漑は干ばつを相殺し、より肥沃な土地を耕作に役立てるのに役立ちます。
+
+自動校正後
+>雨は農業の成功にとって重要な要素である。灌漑は干ばつを相殺し、より肥沃な土地を耕作に役立てるのに役立つ。
+
+</div></details>
+
+<details><summary>使用例2</summary><div>
+
+>Our astronauts have landed on the moon and have taken their first steps on its surface. Even though we weren't the first to reach the moon, this is a great accomplishment that doesn't go unnoticed by the rest of the world.
+
+自動翻訳後
+>私たちの宇宙飛行士は月に着陸し、その表面に彼らの最初の一歩を踏み出しました。私たちが最初に月に到達したわけではありませんでしたが、これは世界の他の人々に気づかれないほどの大きな成果です。
+
+自動校正後
+>宇宙飛行士は月に着陸し、その表面にその最初の一歩を踏み出した。最初に月に到達したわけではなかったが、これは世界の他の人々に気づかれないほどの大きな成果だ。
+
+</div></details>
+
+<details><summary>使用例3</summary><div>
+
+>The Druids played a crucial role in Celtic life. Although there is no concrete absolute certainty about their roles and duties in society, there are several sources that point to similar features of this group.
+
+自動翻訳後
+>ドルイド人はケルト人の生活に重要な役割を果たしました。社会における彼らの役割と義務について具体的な絶対的な確実性はありませんが、このグループの同様の特徴を示すいくつかの情報源があります。
+
+自動校正後
+>ドルイド人はケルト人の生活に重要な役割を果たした。社会におけるその役割と義務について具体的な絶対的な確実性はないが、このグループの同様の特徴を示すいくつかの情報源がある。
+
+</div></details>
+　
+（使用例はいずれもEU4のMod『Extended Timeline』より引用しました）
 
 ## 使い方
 
@@ -98,13 +139,13 @@ Paradox作品で使用される日本語ローカライズファイルの翻訳�
 
     翻訳エンジンは末尾の参考資料などを基に各自ご用意ください（簡単に自作できます）
 
-    Windowsの場合は、URL中の`&`を`%%26`に置き換えてください
+    Windowsの場合は、URLの中の`&`を`%%26`に置き換えてください
 
 ## 制限事項
 
  - 敬語には対応していません
 
-## 今後の予定
+## 今後の計画
 
  - セリフと地の文で文体を使い分ける
 
@@ -114,3 +155,9 @@ Paradox作品で使用される日本語ローカライズファイルの翻訳�
  - tanabee『[3 分で作る無料の翻訳 API with Google Apps Script](https://qiita.com/tanabee/items/c79c5c28ba0537112922)』
  - 林由紀子、松原茂樹『[自然な読み上げ音声出力のための書き言葉から話し言葉へのテキスト変換](http://slp.itc.nagoya-u.ac.jp/web/papers/2007/hayashi_SLP66.pdf)』言語処理学会第14回年次大会発表論文集, pp.790-793, 2008.
  - 一般社団法人 日本翻訳連盟『[JTF日本語標準スタイルガイド（翻訳用）](https://www.jtf.jp/jp/style_guide/pdf/jtf_style_guide.pdf)』
+
+## 連絡先
+
+使い方のサポート、不具合報告などは、[EU4/CK2日本語化プロジェクト](https://discord.gg/v8YMwr4)のDiscordで受け付けております。
+
+参加・退出は自由ですのでお気軽にどうぞ。ブラウザでもアクセスできます。
