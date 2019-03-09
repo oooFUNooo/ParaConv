@@ -181,7 +181,7 @@ def translate(path, file, out, encode, args):
 		transtext = transtext.replace(' ', '')
 
 		if args.mark:
-			transtext = '※自動翻訳※ ' + transtext
+			transtext = '（自動翻訳）' + transtext
 
 		# Output
 		line = line.replace(srctext, transtext)
