@@ -578,9 +578,9 @@ def analyze(path, file, out, log, encode, args):
 						maintext = line.split(';')[1].split(';')[0]
 					maintext = maintext.replace('\\n', '\\\\n')
 					if (args.eu4 or args.hoi4 or args.stellaris):
-						line = re.sub("\"[^\"]+\"", '\"' + maintext + '\\\\n' + key + '\"', line, 1)
+						line = re.sub("\"[^\"]+\"", '\"' + maintext + '†' + '\"', line, 1)
 					elif args.ck2:
-						line = re.sub("^([^;]*);[^;]+;", linesrc.split(';')[0] + ';' + maintext + '\\\\n' + key + ';', line, 1)
+						line = re.sub("^([^;]*);[^;]+;", linesrc.split(';')[0] + ';' + maintext + '†' + ';', line, 1)
 					out.write(line + '\n')
 			else:
 				if (args.eu4 or args.hoi4 or args.stellaris):
