@@ -17,6 +17,9 @@ def analyze(path, file, out, encode, args):
 		if args.line:
 			print(line)
 
+		# Remove Comments
+		line = re.sub(r'\s*#.*$', '', line)
+
 		# Extract Key
 		result = re.search(r"desc\s*=\s*\"?([^\s\"{]+)\"?$", line)
 
