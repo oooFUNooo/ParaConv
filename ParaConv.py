@@ -527,10 +527,13 @@ def analyze(path, file, out, log, encode, args):
 				maintext = line.split(';')[1].split(';')[0]
 
 		# Check Key
+		key = ''
 		if (args.eu4 or args.hoi4 or args.stellaris):
-			key = re.search(r"^\s*([^\s:]+):", line).group(1)
+			res = re.search(r"^\s*([^\s:]+):", line)
 		elif args.ck2:
-			key = re.search(r"^([^;]+);", line).group(1)
+			res = re.search(r"^([^;]+);", line)
+		if res:
+			key = res.group(1)
 
 		if args.key:
 			if not key in keylist:
